@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kima Adventure</title>
+<meta name="description" content="Baixe Kima Adventure para Windows e Android.">
+<style>
+  :root {
+    --bg: #eaf4fb; --card: #ffffff; --ink: #1d3346; --soft: #5b7186;
+    --accent: #ff7a59; --accent-ink: #ffffff; --line: #d6e4ef;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f1c27; --card: #172a3a; --ink: #e8f1f8; --soft: #9fb3c5; --line: #24394b; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 48px 16px 64px; }
+  h1 { font-size: clamp(36px, 8vw, 56px); margin: 0 0 4px; letter-spacing: -0.02em; }
+  .tag { color: var(--soft); margin: 0 0 32px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 24px; }
+  .version { font-size: 14px; color: var(--soft); margin: 0 0 16px; }
+  .version b { color: var(--ink); }
+  .buttons { display: flex; flex-wrap: wrap; gap: 12px; }
+  .btn {
+    flex: 1 1 220px; display: block; text-align: center; text-decoration: none;
+    background: var(--accent); color: var(--accent-ink); font-weight: 700;
+    padding: 14px 18px; border-radius: 14px;
+  }
+  .btn small { display: block; font-weight: 500; opacity: 0.9; }
+  .btn[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
+  .notes { margin: 16px 0 0; color: var(--soft); white-space: pre-line; }
+  h2 { font-size: 20px; margin: 40px 0 12px; }
+  ul { list-style: none; padding: 0; margin: 0; }
+  li { padding: 12px 0; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; }
+  li b { min-width: 80px; }
+  li a { color: var(--accent); }
+  li span { color: var(--soft); font-size: 14px; }
+  .help { color: var(--soft); font-size: 14px; margin-top: 32px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Kima Adventure</h1>
+  <p class="tag">Escolha um pinguim ou uma foca e defenda sua costa gelada.</p>
+
+  <section class="card">
+    <p class="version">Versão atual: <b id="ver">carregando…</b></p>
+    <div class="buttons">
+      <a class="btn" id="win" aria-disabled="true" href="#">Baixar para Windows<small>KimaAdventure.exe</small></a>
+      <a class="btn" id="apk" aria-disabled="true" href="#">Baixar para Android<small>KimaAdventure.apk</small></a>
+    </div>
+    <p class="notes" id="notes"></p>
+  </section>
+
+  <h2>Versões anteriores</h2>
+  <ul id="list"><li><span>carregando…</span></li></ul>
+
+  <p class="help">
+    O jogo procura versões novas ao abrir e avisa na tela de título.
+    No Android, permita "instalar apps desconhecidos" para o navegador na primeira vez.
+  </p>
+</main>
+<script>
+  const REPO = "bellizzileandro/kima-adventure";
+  fetch("latest.json?t=" + Date.now()).then(r => r.json()).then(d => {
+    if (!d.version || d.version === "0.0.0") { document.getElementById("ver").textContent = "nenhuma ainda"; return; }
+    document.getElementById("ver").textContent = d.version;
+    document.getElementById("notes").textContent = d.notes || "";
+    for (const [id, url] of [["win", d.windows], ["apk", d.android]]) {
+      const a = document.getElementById(id);
+      a.href = url; a.removeAttribute("aria-disabled");
+    }
+  }).catch(() => { document.getElementById("ver").textContent = "indisponível"; });
+
+  fetch(`https://api.github.com/repos/${REPO}/releases?per_page=30`).then(r => r.json()).then(rels => {
+    const ul = document.getElementById("list");
+    ul.innerHTML = "";
+    if (!Array.isArray(rels) || !rels.length) { ul.innerHTML = "<li><span>nenhuma</span></li>"; return; }
+    for (const r of rels) {
+      const li = document.createElement("li");
+      const b = document.createElement("b"); b.textContent = r.tag_name; li.append(b);
+      for (const a of r.assets) {
+        const link = document.createElement("a"); link.href = a.browser_download_url;
+        link.textContent = a.name.endsWith(".apk") ? "Android" : "Windows"; li.append(link);
+      }
+      const s = document.createElement("span");
+      s.textContent = new Date(r.published_at).toLocaleDateString("pt-BR"); li.append(s);
+      ul.append(li);
+    }
+  }).catch(() => { document.getElementById("list").innerHTML = "<li><span>indisponível</span></li>"; });
+</script>
+</body>
+</html>
